@@ -1,0 +1,41 @@
+{{ if .Env.LOG_QUERIES }}
+# Uncomment the following two lines to log all DNS queries
+log-queries
+log-facility=/var/log/dnsmasq.log
+{{ end }}
+
+# Uncomment the following line to prevent using the hosts resolver
+no-resolv
+
+# This is required for the Docker container to run properly. Hackish
+user=root
+
+{{ if .Env.DNS_RESOLVERS }}
+# Set the default DNS servers to use if this one does not have an address
+{{ range $ip, $other := groupByMulti $ "Env.DNS_RESOLVERS" "," }}
+server={{ $ip }}
+{{ end }}
+{{ end }}
+
+# Define domain to IP mappings
+# This does wildcard subdomains automagically
+#address=/test/127.0.0.1
+
+{{ if .Env.HOST_IP }}
+	{{ $host_ip := .Env.HOST_IP }}
+
+	{{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+host-record={{ $host }},{{ $host_ip }}
+	{{ end  }}
+
+{{ else }}
+	{{ $host_ip := "127.0.0.1"}}
+
+	{{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+host-record={{ $host }},{{ $host_ip }}
+	{{ end  }}
+
+{{ end }}
+
+
+
